@@ -4,12 +4,15 @@ import {
   Text
 } from 'react-native';
 
+// Screens
+import Home from './src/screens/Home';
+
 
 const App = () => {
   return (
-    <View>
-      <Text>Welcome to Zomato</Text>
-    </View>
+    <>
+      <Home />
+    </>
   );
 };
 
