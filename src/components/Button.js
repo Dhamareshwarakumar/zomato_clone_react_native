@@ -7,9 +7,13 @@ import {
 } from 'react-native';
 import colors from '../utils/colors';
 
-const Button = ({ text, onPress, style }) => {
+const Button = ({ text, onPress, style, disabled }) => {
     return (
-        <TouchableOpacity style={[styles.button, style]} onPress={onPress}>
+        <TouchableOpacity
+            style={[styles.button, style]}
+            onPress={onPress}
+            disabled={disabled}
+        >
             <Text style={styles.buttonText}>{text}</Text>
         </TouchableOpacity>
     );

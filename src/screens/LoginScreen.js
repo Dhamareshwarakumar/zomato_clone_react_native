@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import {
     Image,
+    Linking,
     Platform,
+    Pressable,
     ScrollView,
     StatusBar,
     StyleSheet,
@@ -10,6 +12,8 @@ import {
     View,
 } from 'react-native';
 import EntypoIcon from 'react-native-vector-icons/Entypo';
+import { useDispatch, useSelector } from 'react-redux';
+import axios from 'axios';
 // components
 import InlineText from '../components/InlineText';
 import Button from '../components/Button';
@@ -17,10 +21,50 @@ import Button from '../components/Button';
 import loginImage from '../assets/login.webp';
 import googleLogo from '../assets/google_logo.png';
 import colors from '../utils/colors';
+// redux
+import { login } from '../features/authSlice';
 
-const Login = () => {
+
+const LoginScreen = () => {
+    const dispatch = useDispatch();
+    const isAuthenticated = useSelector(store => store.auth.isAuthenticated);
+
     const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [otp, setOtp] = useState('');
+    const [otpHash, setOtpHash] = useState('');
+
+    const loginWithOtp = () => {
+        setLoading(true);
+        axios.post('api/auth/login', { email })
+            .then(res => {
+                setOtpHash(res.data.otpHash);
+            })
+            .catch(err => {
+                console.warn(err);
+            })
+            .finally(() => setLoading(false));
+    };
+
+    const verifyOtp =  () => {
+        setLoading(true);
+
+        axios.post('api/auth/otp', { otpHash, otp: Number(otp), email })
+            .then(res => {
+                setOtp('');
+                setEmail('');
+                setOtpHash('');
+                console.log('[000] Token Received', res.data.token)
+                dispatch(login({
+                    email,
+                    token: res.data.token
+                }));
+            })
+            .catch(err => {
+                console.warn(err);
+            })
+            .finally(() => setLoading(false));
+    };
 
     return (
         <>
@@ -36,29 +80,51 @@ const Login = () => {
                     <Text style={styles.title}>India's #1 Food Delivery and Dining App</Text>
                     <InlineText text='Login or Signup' />
                     <View style={{ marginVertical: 10 }}>
+                    {otpHash === '' ? (
+                        <>
                         <TextInput
                             placeholder='Email'
                             style={styles.input}
                             value={email}
                             onChangeText={text => setEmail(text)}
+                            editable={!loading}
                         />
+                        <Button
+                            text='Login with OTP'
+                            style={{ marginVertical: 4, backgroundColor: loading ? '#f7746f' : '#E72444' }}
+                            onPress={loginWithOtp}
+                            disabled={loading}
+                        />
+                        </>
+                    ) : (
+                        <>
                         <TextInput
-                            placeholder='Password'
+                            placeholder='OTP'
                             style={styles.input}
-                            secureTextEntry={true}
-                            value={password}
-                            onChangeText={text => setPassword(text)}
+                            value={otp}
+                            onChangeText={text => setOtp(text)}
+                            editable={!loading}
                         />
-                        <Button text='Continue' style={{ marginVertical: 4 }} />
+                         <Button
+                            text='Enter OTP'
+                            style={{ marginVertical: 4, backgroundColor: loading ? '#f7746f' : '#E72444' }}
+                            onPress={verifyOtp}
+                            disabled={loading}
+                        />
+                        </>
+                    )}
                     </View>
                     <InlineText text='or' />
                     <View style={styles.otherLoginContainer}>
-                        <View style={styles.otherLoginButton}>
+                        <Pressable
+                            style={styles.otherLoginButton}
+                            onPress={() => Linking.openURL('https://2a05-49-205-103-254.in.ngrok.io/api/auth/google')}
+                        >
                             <Image
                                 source={googleLogo}
                                 style={styles.otherLoginButtonImage}
                             />
-                        </View>
+                        </Pressable>
                         <View style={styles.otherLoginButton}>
                             <EntypoIcon name='dots-three-horizontal' size={20} color='black' />
                         </View>
@@ -71,7 +137,7 @@ const Login = () => {
     );
 };
 
-export default Login;
+export default LoginScreen;
 
 const styles = StyleSheet.create({
     container: {
